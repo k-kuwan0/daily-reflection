@@ -1,0 +1,29 @@
+# 実データの config はコミットしない
+#
+# 理由:
+#   - config.jsonc: Slackユーザー ID・メールアドレス等の個人情報と、
+#     顧客名・案件番号・案件名等の営業機密を両方含む
+#
+# リポジトリが private であっても除外する。誤って public 化した際の
+# 事故を構造的に防ぐため。実データはローカルにのみ保持し、
+# config.example.jsonc をテンプレートとしてコミットする。
+config/config.jsonc
+
+# デフォルトの出力先（日報・稼働実績）は除外する
+#
+# 理由:
+#   - 日報には顧客名や打ち合わせ内容が含まれる
+#   - 稼働実績には顧客名・案件番号（営業機密）が含まれる
+#
+# config/config.jsonc の output_dirs をリポジトリ外の絶対パス（Obsidian の
+# Vault など）に変更すればこの配下には出力されなくなるが、デフォルト設定
+# （config.example.jsonc）ではリポジトリ内の ./outputs/ に出力されるため、
+# 誤って追跡対象に入れないよう構造的に除外する。
+/outputs/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

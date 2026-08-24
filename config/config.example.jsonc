@@ -1,0 +1,190 @@
+// このファイルを config.jsonc にコピーして実際の値を設定する。
+// config.jsonc は .gitignore で除外される。
+{
+  // 情報源ごとの識別子。Slack・Google カレンダー・Git という別々の情報源から
+  // 自分の情報を引くための鍵をまとめる。
+  "sources": {
+    // Googleカレンダーの設定。
+    //   id               = カレンダーID
+    //   display_name     = カレンダー上の表示名（この名前のカレンダーの予定を主対象とする）
+    //   ignore_calendars = 無視するカレンダー名の配列
+    //                      （工数入力用など日報に不要なカレンダーを除外する）
+    "calendar": {
+      "id": "your.name@example.com",
+      "display_name": "山田太郎",
+      "ignore_calendars": [
+        "工数入力"
+      ]
+    },
+    "slack": {
+      "user_id": "U00000000000"
+    },
+    // git log --author に渡す値。メールアドレスを推奨。
+    // author 名（表示名）はリポジトリごとに異なることがあるが、
+    // メールアドレスは共通のことが多いため。
+    "git": {
+      "author": "your.name@example.com"
+    }
+  },
+  // 出力先。
+  //   report    = 日報（事実の記録）
+  //   timesheet = 稼働実績（工数入力用）
+  // それぞれ独立した設定項目で、別ディレクトリを指定できる。
+  // 同じ場所にまとめたい場合は同じ値を書けばよい。
+  //
+  // パスの書き方は3種類:
+  //   {REPO_ROOT}/... = このリポジトリのルート基準（リポジトリ内に出力する場合）
+  //   ~/...           = ホームディレクトリ基準
+  //   /...            = 絶対パス
+  // 「./」始まりの裸の相対パスは使わない（cwd基準と誤解されるため）。
+  //
+  // デフォルトは {REPO_ROOT}/outputs/... で、そのままリポジトリ内に出力される
+  // （.gitignore で除外済み、clone直後でも試せる）。
+  // Obsidian等のノートアプリのVaultを指定してもよい（例: "~/Obsidian/daily-reports"）が、必須ではない。
+  "output_dirs": {
+    "report": "{REPO_ROOT}/outputs/report",
+    "timesheet": "{REPO_ROOT}/outputs/timesheets"
+  },
+  // 作業ディレクトリ → 日報上のプロジェクト名。
+  //
+  // セッションログには「どのディレクトリで作業したか」(cwd) が記録される。
+  // この対応表があると、そのセッションがどの活動だったかを推定できる。
+  // ここに無い cwd は日報作成時にユーザーへ確認し、承認されたら自動追記される。
+  //
+  // キーは必ず絶対パス（/... ）か ~/... で書く。「./」始まりや裸の相対パスは
+  // 実行時の cwd によって指す先が変わるため受け付けない。
+  //
+  // 値は work_codes[].display_name と同じ名前で揃えること
+  // （日報の見出しと稼働実績のプロジェクト名を一致させるため）。
+  //
+  // 1つのディレクトリには1つの活動を対応させる。ただしこれは推定の既定値であり、
+  // 実際の作業内容が明らかに違う場合は日報作成時に個別判断される。
+  // そのリポジトリに関係する作業（スキル改善なども含む）は同じ活動として扱い、
+  // 全く別の作業やグローバル設定の変更は別の活動として切り分ける。
+  //
+  // 複数のディレクトリを同じプロジェクト名に対応させてもよい（値の重複は可）。
+  "projects": {
+    "~/path/to/project-a": "<日報上のプロジェクト名>",
+    "/absolute/path/to/project-b": "<日報上の別のプロジェクト名>"
+  },
+  // 稼働実績テーブルの生成に使う作業コード一覧。
+  // 顧客名・案件番号を含むため、実データは .gitignore で除外される。
+  //
+  // 各フィールド:
+  //   case_number  = 案件番号（10桁）
+  //   project_name = 案件名
+  //   code         = 作業コード（工数入力に使う16桁）
+  //   work_name    = 作業名称（予実管理CSVに出力される正式名称）
+  //   display_name = 任意・日報上のプロジェクト名（projects の値と揃える）
+  //                  work_name は工数システムの正式名称で長いため、日報の見出しには
+  //                  こちらを使う。未設定なら work_name が使われるが、日によって
+  //                  表記が揺れる原因になるので、実際に使うコードには設定しておく。
+  //   customer     = 顧客名
+  //   valid_until  = 任意・案件の有効期限（YYYY-MM、期限切れコードの検出に使う）
+  //
+  // 下記3件は、実データで登場するパターンを網羅した雛形:
+  //   1件目・2件目 = 同じ case_number を複数の code で共有する形
+  //                  （常設の案件に、活動ごとの作業コードが割り当たるケース）
+  //   3件目        = 案件ごとの単独コード。期限があるので valid_until を持つ
+  //
+  // <> で囲んだ箇所を自分の値に置き換える。case_number / code の桁数
+  //（10桁 / 16桁）は変えないこと。
+  "work_codes": [
+    {
+      "case_number": "0000000000",
+      "project_name": "<常設案件名>",
+      "code": "P000000000000001",
+      "work_name": "<顧客名>:<作業名>",
+      "display_name": "<日報上のプロジェクト名>",
+      "customer": "<顧客名>"
+    },
+    {
+      "case_number": "0000000000",
+      "project_name": "<常設案件名>",
+      "code": "P000000000000002",
+      "work_name": "<顧客名>:<別の作業名>",
+      "display_name": "<日報上の別のプロジェクト名>",
+      "customer": "<顧客名>"
+    },
+    {
+      "case_number": "0000000001",
+      "project_name": "<案件名>",
+      "code": "P000000000001000",
+      "work_name": "<案件名>",
+      "display_name": "<日報上のプロジェクト名>",
+      "customer": "<顧客名>",
+      "valid_until": "<YYYY-MM>"
+    }
+  ],
+  // 稼働実績を外部システム向けにエクスポートする設定。
+  // 工数管理システムの仕様に合わせて列構成を定義する。
+  //
+  // 方式は「列定義 + 語彙を限定」。テンプレート言語や自由記述ではなく、
+  // あらかじめ決めた語彙のみを使う。CSVは工数システムに登録するデータなので
+  // 毎回同じ結果になる再現性が重要で、解釈の揺れる余地を最小にすべきだからである。
+  // 将来語彙が足りなくなったら、transform / format にキーワードを追加すればよい。
+  "export": {
+    "format": "csv",
+    "encoding": "utf-8",
+    // 出力先。{YYYY} {MM} {YYYY-MM} などの日付プレースホルダが使える。
+    // パスの書き方は output_dirs と同じ（{REPO_ROOT}/... | ~/... | /...）。
+    // デフォルトはリポジトリ内の {REPO_ROOT}/outputs/exports/（.gitignore で除外済み）。
+    // Google Drive 等の共有フォルダへ直接出したい場合は ~ 始まりか絶対パスに変更する
+    // （例: "~/Library/CloudStorage/GoogleDrive-<アカウント>/マイドライブ/工数/{YYYY-MM}/{YYYY-MM}.csv"）。
+    "output_path": "{REPO_ROOT}/outputs/exports/{YYYY-MM}/{YYYY-MM}.csv",
+    // 既存ファイルがある場合の挙動: append（追記） | overwrite（上書き）
+    "on_existing": "append",
+    // 列定義。source は稼働実績JSONのフィールド名、
+    // transform / format は下記の語彙から選ぶ。
+    //
+    // transform（値の変換）:
+    //   last5           = 値の下5桁を取る（例: "0000009901" → "09901"）
+    //   work_name_rule  = work_name_rules の定義に従って変換する
+    //   （指定なし）     = 値をそのまま使う
+    //
+    // format（表示形式）:
+    //   decimal_hours2 = 分を小数時間に変換し小数点以下2桁（例: 90 → "1.50"、15 → "0.25"）
+    //   activity       = breakdown 配列を "活動名(時間)" の形式で連結
+    //   （指定なし）    = 値をそのまま使う
+    "columns": [
+      {
+        "name": "日付",
+        "source": "date"
+      },
+      {
+        "name": "プロジェクト番号",
+        "source": "case_number",
+        "transform": "last5"
+      },
+      {
+        "name": "作業オーダ番号",
+        "source": "code"
+      },
+      {
+        "name": "作業名称",
+        "source": "work_name",
+        "transform": "work_name_rule"
+      },
+      {
+        "name": "実績時間",
+        "source": "minutes",
+        "format": "decimal_hours2"
+      },
+      {
+        "name": "備考",
+        "source": "breakdown",
+        "format": "activity"
+      }
+    ],
+    // 作業名称の表記ルール（transform: work_name_rule で使用）。
+    // 特定の案件番号のとき、work_name を指定の形式に変換する。
+    // {customer} は work_codes[].customer、{work_name_after_colon} は
+    // work_name の最初の ":" 以降の部分に展開される。
+    "work_name_rules": [
+      {
+        "case_number": "0000000000",
+        "format": "{customer}: {work_name_after_colon}"
+      }
+    ]
+  }
+}
